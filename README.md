@@ -1,2 +1,2 @@
 # vogda
-Visualization of Ocular Genomics DAtasets
+**V**isualization of **O**cular **G**enomics **DA**tasets
