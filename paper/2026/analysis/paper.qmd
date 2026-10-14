@@ -1,0 +1,49 @@
+---
+title: "Paper"
+author: "David McGaughey"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    code-fold: false
+    embed-resources: true
+execute:
+  message: false
+  warning: false
+  fig-width: 8
+  fig-height: 6
+  fig-dpi: 300
+  error: true
+  cache: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+/Users/mcgaugheyd/git/vogda
+
+# Introduction
+
+# Methods 
+
+# Results
+
+## Characteristics of the EiaD Cohort
+
+## geyser, scGeyser apps
+
+## supeRwig app
+
+## MegaView (geyser + scGeyser + supeRwig)?
+
+## Age differences unique to retina, rpe, cornea when compared to other tissues
+
+## Sex differences unique to retina, rpe, cornea when compared to other tissues
+
+## Novel transcripts unique to retina, rpe,cornea
+
+# Conclusion
+
+# Citations

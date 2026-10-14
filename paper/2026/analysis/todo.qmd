@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+author: "David McGaughey"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    code-fold: false
+    embed-resources: true
+execute:
+  message: false
+  warning: false
+  fig-width: 8
+  fig-height: 6
+  fig-dpi: 300
+  error: true
+  cache: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+
+/Users/mcgaugheyd/git/vogda
+
+
+# To Do
+
+# vogda
+
+1. Build landing page
+2. Deploy internally
+3. Deploy on public internet
+
+# geyser
+
+1. Adjust plot height properly in cases where a gene is used, but the data
+is plotting at the transcript level (I think the height multiplier relies on 
+the user gene input count)
+
+# scGeyser
+
+# superRwig
+
+1. Write a "scripting" mode which can return the plots directly from the command line / Rstudio
+
+# EiaD
+
+1. Add First Author, Lab, and year of Publication to each sample
+2. Infer ancestry?
+
+# scEiaD
+
+1. Add First Author, Lab, and year of Publication to each sample
+2. Infer ancestry?
+

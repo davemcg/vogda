@@ -1,0 +1,277 @@
+---
+title: "Untitled"
+author: "David McGaughey"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    code-fold: false
+    embed-resources: true
+execute:
+  message: false
+  warning: false
+  fig-width: 8
+  fig-height: 6
+  fig-dpi: 300
+  error: true
+  cache: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+
+/Users/mcgaugheyd/git/vogda
+
+
+# Setup
+```{r}
+library(SummarizedExperiment)
+library(HDF5Array)
+library(tidyverse)
+```
+
+# Load EiaD Gene Counts (cpm)
+```{r}
+cts <- loadHDF5SummarizedExperiment("~/data/vogda/eiad/se_h5/se_gene_cpm_human.20261013.hdf5/")
+```
+
+# Load EiaD Exon Counts (cpm)
+```{r}
+exon <- loadHDF5SummarizedExperiment("~/data/vogda/eiad/se_h5/se_exon_cpm_human.20261013.hdf5//")
+```
+
+# Load Eiad Splice Junction (SJ) Counts (cpm)
+```{r}
+sj <- loadHDF5SummarizedExperiment("~/data/vogda/eiad/se_h5/se_sj_human.20261007.hdf5/")
+
+```
+
+# Load Retina Adult vs Retina Fetal Diff Testing
+```{r}
+diff <- readRDS('data/eiad_retina_adult_vs_fetal_tx_diff.rds')
+```
+
+# ANK2 
+
+```{r}
+diff$sj_topsplice_gene |> head()
+```
+## Across the body
+```{r, fig.height=4, fig.width=10}
+gene <- 'KIF1B'
+res <- geyser::geyser_boxplot(
+    rse = cts,
+    features = gene,
+    groupings = c("Tissue"),
+    slot = "cpm",
+    feature_col = "gene_name",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = TRUE,
+    data_source_name = "EiaD"
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+  legend.position = "none")
+```
+
+## Across adult and fetal retina
+```{r, fig.height=4, fig.width=10}
+retina_cts <- cts[,(cts$Tissue == 'Retina' & !grepl("AMD", cts$Perturbation))]
+res <- geyser::geyser_boxplot(
+    rse = retina_cts,
+    features = gene,
+    groupings = c("Tissue", "Age", "Source"),
+    slot = "cpm",
+    feature_col = "gene_name",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = TRUE,
+    data_source_name = "EiaD"
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+  legend.position = "none")
+```
+
+
+## ANK2 Exon Counts (Retina only)
+```{r, fig.height=100, fig.width=15}
+retina_exon <- exon[,(exon$Tissue == 'Retina' & !grepl("AMD", exon$Perturbation))]
+res <- geyser::geyser_boxplot(
+    rse = retina_exon,
+    features = gene,
+    groupings = c("Tissue", "Age", "Source"),
+    slot = "cpm",
+    feature_col = "gene_name",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = FALSE,
+    data_source_name = "EiaD",
+    facet_ncol = 5
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+  legend.position = "none")
+```
+
+## ANK2 Junction Counts (Retina only)
+```{r, fig.height=40, fig.width=15}
+retina_sj <- sj[,(sj$Tissue == 'Retina' & !grepl("AMD", sj$Perturbation))]
+res <- geyser::geyser_boxplot(
+    rse = retina_sj,
+    features =gene,
+    groupings = c("Tissue", "Age", "Source"),
+    slot = "counts",
+    feature_col = "SYMBOL",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = FALSE,
+    data_source_name = "EiaD",
+    facet_ncol = 5
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+  legend.position = "none")
+```
+
+# Align Exon / Junctions
+
+```{r}
+# chr1:197414001-197420999:+
+
+
+
+j2e_map |> filter(jid == diff$sj_topsplice_gene |> filter(SYMBOL == gene) |> row.names())
+```
+
+
+```{r}
+
+jid_of_interest <- j2e_map |> filter(jid == diff$sj_topsplice_gene |> filter(SYMBOL == gene) |> row.names()) |> pull(jid)
+res <- geyser::geyser_boxplot(
+    rse = retina_exon[j2e_map |> filter(jid == jid_of_interest) |> pull(upstream_exon),],
+    features = gene,
+    groupings = c("Tissue", "Age", "Source"),
+    slot = "mean_coverage",
+    feature_col = "gene_name",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = FALSE,
+    data_source_name = "EiaD",
+    facet_ncol = 5
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+  legend.position = "none") + ggtitle("Upstream Exon")
+
+res <- geyser::geyser_boxplot(
+    rse = retina_sj[jid_of_interest,],
+     features = gene,
+    groupings = c("Tissue", "Age", "Source"),
+    slot = "cpm",
+    feature_col = "SYMBOL",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = FALSE,
+    data_source_name = "EiaD",
+    facet_ncol = 5
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+  legend.position = "none") + ggtitle("Junction")
+
+
+
+res <- geyser::geyser_boxplot(
+    rse = retina_exon[j2e_map |> filter(jid == jid_of_interest) |> pull(downstream_exon),],
+     features = gene,
+    groupings = c("Tissue", "Age", "Source"),
+    slot = "mean_coverage",
+    feature_col = "SYMBOL",
+    color_by = "Tissue",
+    color_palette = "okabe",
+    expression_scale = TRUE,
+    show_points = FALSE,
+    data_source_name = "EiaD",
+    facet_ncol = 5
+)
+
+res$plot +coord_flip() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+  legend.position = "none") + ggtitle("Downstream Exon")
+
+
+```
+
+
+
+# supeRwig Coverage
+
+```{r}
+library(supeRwig)
+
+ctx <- supeRwig:::build_context(
+  se_dir = '~/data/vogda/eiad/EiaD_2026_hdf5/',
+  sj_se_dir  = '~/data/vogda/eiad/se_h5/human_junctions_se.20261007/',
+  bigwig_base = '~/data/vogda/eiad/bigwig/',
+  anno_fst = '~/git/EiaD_build/data/gencode.v48.primary_assembly.annotation.table.fst',
+  bigwig_ext = '.bw',
+  n_workers = 10
+)
+# only keep retina
+ctx$eiad_meta <- ctx$eiad_meta |> dplyr::filter(Tissue == 'Retina')
+# only keep ref junctions
+ctx$sj_row_meta <- ctx$sj_row_meta[SummarizedExperiment::rowData(ctx$sj_se)$annot == 1,]
+```
+
+```{r}
+chr <- j2e_map |> filter(jid == diff$sj_topsplice_gene |> filter(SYMBOL == gene) |> row.names()) |> pull(upstream_exon) |> str_split(":|-|_") |> unlist() |> (\(x) x[1])()
+up_coord <- j2e_map |> filter(jid == diff$sj_topsplice_gene |> filter(SYMBOL == gene) |> row.names()) |> pull(upstream_exon) |> str_split(":|-|_") |> unlist() |> (\(x) x[2])() |> as.integer()
+down_coord <- j2e_map |> filter(jid == diff$sj_topsplice_gene |> filter(SYMBOL == gene) |> row.names()) |> pull(downstream_exon) |> str_split(":|-|_") |> unlist() |> (\(x) x[3])() |> as.integer()
+
+# 2. Script plot generation directly to self-contained HTML files
+a <- supeRwig::plot_wiggle(
+  ctx,
+  chr           = chr,
+  start         = up_coord-1000,
+  end           = down_coord+1000,
+  facet_cols      = c("Tissue", "Age"),
+  color_by        = "Tissue",
+  show_junctions  = TRUE,
+  #target_gene   = "ANK2",
+  min_psi5        = 10,
+  min_psi3        = 10,
+  overlap_factor = 0.8,
+  mean_average = TRUE,
+  interactive = FALSE
+)
+
+b <- supeRwig:::plot_region_heatmap(
+  ctx           = ctx,
+  chr           = chr,
+  start         = up_coord-1000,
+  end           = down_coord+1000,
+  facet_cols    = c("Tissue", "Age"),
+  #target_gene   = "DPY19L2P2",
+  palette       = "magma",       # Viridis magma scheme
+  show_transcripts = TRUE        # Aligned transcript models over heatmap
+)
+b
+a$plot
+```
