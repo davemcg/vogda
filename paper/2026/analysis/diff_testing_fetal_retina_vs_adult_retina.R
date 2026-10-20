@@ -18,18 +18,29 @@ suppressPackageStartupMessages({
 # ---------------------------------------------------------
 # 1. Set import paths and metadata
 # ---------------------------------------------------------
-salmon_base <- "/Volumes/OGVFB_BG/EiaD_2026/salmon_quant/"
+salmon_base <- "salmon_quant/"
 salmon_dirs <- list.dirs(salmon_base, recursive = FALSE)
 
-sj_h5_path <- "~/data/vogda/eiad/se_h5/se_sj_human.20261007.hdf5/"
-gtf_path   <- "/Users/mcgaugheyd/data/vogda/eiad/references/gencode.v48.primary_assembly.annotation.gtf.gz"
+gtf_path <- '/data/mcgaugheyd/genomes/GRCh38/gencode.v47.primary_assembly.annotation.gtf.gz'
+meta <- '/home/mcgaugheyd/git/EiaD_build/data/2026_05_28_EiaD.meta.tsv.gz'
 
-nmeta <- data.table::fread('paper/2026/analysis/data/2026_05_28_EiaD.meta.tsv.gz')
+sj_h5_path <- "counts/se_sj_human.20261007.hdf5"
+
+nmeta <- data.table::fread(meta)
 
 nmeta_filter <- nmeta %>%
-  filter(sample_accession %in% basename(salmon_dirs)) %>%
-  filter(Organism == 'Homo sapiens', Tissue == 'Retina') %>%
-  filter(is.na(Perturbation) | Perturbation == 'MGS 1')
+  filter(Organism == 'Homo sapiens') %>%
+  filter(Tissue == 'Retina') %>%
+  filter(is.na(Perturbation) | Perturbation == 'MGS 1') %>% 
+  group_by(across(!c(run_accession,
+                     gtex_sra_run_accession,
+                     gtex_accession,
+                     sample_title))) |>
+  summarise(run_accession = paste0(unique(run_accession), collapse = ','),
+            gtex_sra_run_accession = paste0(unique(gtex_sra_run_accession), collapse = ', '),
+            gtex_accession =  paste0(unique(gtex_accession), collapse = ', '),
+            sample_title  =  paste0(unique(sample_title), collapse = ', ')) |>
+  ungroup()
 
 nmeta_filter <- nmeta_filter %>%
   mutate(Age = case_when(Source %in% c("Organoid", "ESC") ~ 'Fetal', TRUE ~ Age))
@@ -279,16 +290,18 @@ sj_topsplice_exon <- sj_topsplice_exon %>%
 # ---------------------------------------------------------
 # 11. Output Generation & Saving
 # ---------------------------------------------------------
-saveRDS(se, file = 'paper/2026/analysis/data/eiad_retina_adult_fetal.se.20261014.rds')
+system("mkdir -p vogda")
+saveRDS(se, file = 'vogda/eiad_retina_adult_fetal.se.20261014.rds')
+
 
 fdr_threshold <- 0.05
 
 pan_diff_table <- topsplice_gene |>
-  select(GENEID, Gene, FDR.ts_gene = FDR) |>
-  inner_join(topsplice_simes |> select(GENEID, FDR.ts_simes = FDR), by = 'GENEID') |>
-  inner_join(topsplice_exon  |> select(GENEID, TXNAME, FDR.ts_exon = FDR, logFC.ts_exon = logFC), by = 'GENEID') |>
-  left_join(gene_de |> select(GENEID = GeneID, logFC.gene_de = logFC, FDR.gene_de = FDR), by = 'GENEID') |>
-  left_join(tx_de   |> select(TXNAME, logFC.gtx_de = logFC, FDR.tx_de = FDR), by = 'TXNAME') |>
+  dplyr::select(GENEID, Gene, FDR.ts_gene = FDR) |>
+  inner_join(topsplice_simes |> dplyr::select(GENEID, FDR.ts_simes = FDR), by = 'GENEID') |>
+  inner_join(topsplice_exon  |> dplyr::select(GENEID, TXNAME, FDR.ts_exon = FDR, logFC.ts_exon = logFC), by = 'GENEID') |>
+  left_join(gene_de |> dplyr::select(GENEID = GeneID, logFC.gene_de = logFC, FDR.gene_de = FDR), by = 'GENEID') |>
+  left_join(tx_de   |> dplyr::select(TXNAME, logFC.gtx_de = logFC, FDR.tx_de = FDR), by = 'TXNAME') |>
   mutate(
     Gene_DTU_Sig = (FDR.ts_simes < fdr_threshold) | (FDR.ts_gene < fdr_threshold),
     Category     = case_when(
@@ -313,5 +326,5 @@ out <- list(
   sj_count_summary   = sj_count_summary
 )
 
-saveRDS(out, file = 'paper/2026/analysis/data/eiad_retina_adult_vs_fetal_tx_diff.20261014.rds')
-message("Pipeline completed successfully!")
+saveRDS(out, file = 'vogda/eiad_retina_adult_vs_fetal_tx_diff.20261014.rds')
+message("Done!")
