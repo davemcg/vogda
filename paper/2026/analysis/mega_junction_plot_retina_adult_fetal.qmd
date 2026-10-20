@@ -1,0 +1,91 @@
+---
+title: "Adult Retina vs Developing Retina Differential Junctions"
+author: "David McGaughey"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    code-fold: false
+    embed-resources: true
+execute:
+  message: false
+  warning: false
+  fig-width: 8
+  fig-height: 6
+  fig-dpi: 300
+  error: true
+  cache: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+
+/Users/mcgaugheyd/git/vogda
+
+# Setup
+```{r}
+suppressMessages({
+  library(SummarizedExperiment)
+  library(HDF5Array)
+  library(tidyverse)
+  library(data.table)
+  library(patchwork)
+  library(supeRwig)
+  source("mega_junction_plot_retina_adult_fetal_backend_code.R")
+})
+```
+
+# Load Data
+## Load EiaD Gene Counts (cpm)
+```{r}
+cts <- loadHDF5SummarizedExperiment("~/data/vogda/eiad/se_h5/se_gene_cpm_human.20261013.hdf5/")
+```
+
+## Load EiaD Exon Counts (cpm)
+```{r}
+exon <- loadHDF5SummarizedExperiment("~/data/vogda/eiad/se_h5/se_exon_cpm_human.20261015.hdf5/")
+row.names(exon) <- gsub("ENSE\\d+\\.\\d+:","", row.names(exon))
+```
+
+## Load Eiad Splice Junction (SJ) Counts (cpm)
+```{r}
+sj <- loadHDF5SummarizedExperiment("~/data/vogda/eiad/se_h5/se_sj_human.20261007.hdf5/")
+```
+
+## Load Retina Adult vs Retina Fetal Diff Testing
+```{r}
+diff <- readRDS('data/eiad_retina_adult_vs_fetal_tx_diff.20261014.rds')
+```
+
+# Top Splicing Diff 
+
+annot "1" means known, "0" means novel
+```{r}
+diff$sj_topsplice_exon |> 
+  head(100) |> 
+  relocate(jid, logFC) |> 
+  DT::datatable()
+```
+
+# Set Loop
+```{r}
+junctions <- diff$sj_topsplice_exon |>  head(100) |> pull(jid)
+up_delta <- 1000
+down_delta <- 1000
+logFC_set <- -10
+```
+
+
+# Mega Plot Write to SVG
+```{r, fig.height = 9, fig.width=18, warning=FALSE, messages = FALSE}
+ 
+system("mkdir -p adult_retina_vs_fetal_retina_diff_junction_plots")
+for (j in junctions){
+  suppressMessages(plot <- (mega_maker(j)))
+  gene <- diff$sj_topsplice_exon |> filter(jid == j) |> pull(SYMBOL)
+  ggsave(plot, filename = paste0("adult_retina_vs_fetal_retina_diff_junction_plots/", gene, "-", j, ".svg"), units = "in", width = 18, height = 9, device = svg)
+}
+```

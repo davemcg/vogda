@@ -22,7 +22,7 @@ salmon_base <- "/Volumes/OGVFB_BG/EiaD_2026/salmon_quant/"
 salmon_dirs <- list.dirs(salmon_base, recursive = FALSE)
 
 sj_h5_path <- "~/data/vogda/eiad/se_h5/se_sj_human.20261007.hdf5/"
-gtf_path   <- "/Users/mcgaugheyd/data/vogda/eiad/references/gencode.v48.primary_assembly.annotation.gtf.gz"
+gtf_path   <- "/Users/mcgaugheyd/data/vogda/eiad/references/gencode.v47.primary_assembly.annotation.gtf.gz"
 
 nmeta <- data.table::fread('paper/2026/analysis/data/2026_05_28_EiaD.meta.tsv.gz')
 
